@@ -1,0 +1,3 @@
+[submodule "webrtc"]
+	path = webrtc
+	url = https://chromium.googlesource.com/external/webrtc
