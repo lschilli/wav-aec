@@ -13,9 +13,10 @@ using namespace std;
 using namespace webrtc;
 
 DEFINE_string(near_in, "", "potentially distorted signal - REQUIRED");
-DEFINE_int32(near_in_sr, 16000, "near_in sample rate");
+DEFINE_int32(in_sr, 16000, "in sample rate");
 DEFINE_string(far_in, "", "reverse signal / aec reference signal");
 DEFINE_string(near_out, "", "cleaned near input signal - REQUIRED");
+DEFINE_int32(out_sr, 16000, "out sample rate");
 
 DEFINE_int32(sys_delay, 12, "delay between near and far end in ms");
 DEFINE_int32(ns_level, -1, "noise supression level 0-3");
@@ -88,8 +89,8 @@ int main(int argc, char** argv) {
     }
 
     //todo: show aec delays, metrics, speech probability
-    const int sample_rate = FLAGS_near_in_sr;
-    const size_t num_chunk_samples = sample_rate / 100;
+    const size_t num_chunk_samples_in = FLAGS_in_sr / 100;
+    const size_t num_chunk_samples_out = FLAGS_out_sr / 100;
     const int num_channels = 1;
 
     //near end is mixed signal
@@ -109,39 +110,40 @@ int main(int argc, char** argv) {
 
     std::shared_ptr<AudioProcessing> ap = configure_processing();
 
-    std::vector<int16_t> far_raw_data(num_chunk_samples * num_channels);
-    std::vector<int16_t> near_raw_data(num_chunk_samples * num_channels);
-    std::vector<int16_t> out_raw_data(num_chunk_samples * num_channels);
-    std::vector<float> far_float_data(num_chunk_samples * num_channels);
-    std::vector<float> near_float_data(num_chunk_samples * num_channels);
-    std::vector<float> out_float_data(num_chunk_samples * num_channels);
-    webrtc::ChannelBuffer<float> far_chan_buf(num_chunk_samples, num_channels);
-    webrtc::ChannelBuffer<float> near_chan_buf(num_chunk_samples, num_channels);
-    webrtc::ChannelBuffer<float> out_chan_buf(num_chunk_samples, num_channels);
+    std::vector<int16_t> far_raw_data(num_chunk_samples_in * num_channels);
+    std::vector<int16_t> near_raw_data(num_chunk_samples_in * num_channels);
+    std::vector<int16_t> out_raw_data(num_chunk_samples_out * num_channels);
+    std::vector<float> far_float_data(num_chunk_samples_in * num_channels);
+    std::vector<float> near_float_data(num_chunk_samples_in * num_channels);
+    std::vector<float> out_float_data(num_chunk_samples_out * num_channels);
+    webrtc::ChannelBuffer<float> far_chan_buf(num_chunk_samples_in, num_channels);
+    webrtc::ChannelBuffer<float> near_chan_buf(num_chunk_samples_in, num_channels);
+    webrtc::ChannelBuffer<float> out_chan_buf(num_chunk_samples_out, num_channels);
 
-    webrtc::StreamConfig stream_config(sample_rate, num_channels);
+    webrtc::StreamConfig stream_config_in(FLAGS_in_sr, num_channels);
+    webrtc::StreamConfig stream_config_out(FLAGS_out_sr, num_channels);
     int buf_cnt = 0;
     while (true) {
         if (!FLAGS_far_in.empty()) {
             far_in.read((char*)far_raw_data.data(), far_raw_data.size()*sizeof(int16_t));
             if (!far_in) break;
             webrtc::S16ToFloat(far_raw_data.data(), far_raw_data.size(), far_float_data.data());
-            webrtc::Deinterleave(far_float_data.data(), num_chunk_samples, num_channels, far_chan_buf.channels());
+            webrtc::Deinterleave(far_float_data.data(), num_chunk_samples_in, num_channels, far_chan_buf.channels());
         }
         near_in.read((char*)near_raw_data.data(), near_raw_data.size()*sizeof(int16_t));
         if (!near_in) break;
         webrtc::S16ToFloat(near_raw_data.data(), near_raw_data.size(), near_float_data.data());
-        webrtc::Deinterleave(near_float_data.data(), num_chunk_samples, num_channels, near_chan_buf.channels());
+        webrtc::Deinterleave(near_float_data.data(), num_chunk_samples_in, num_channels, near_chan_buf.channels());
         if (!FLAGS_far_in.empty()) {
             RTC_CHECK_EQ(AudioProcessing::kNoError,
                          ap->set_stream_delay_ms(FLAGS_sys_delay));
             RTC_CHECK_EQ(AudioProcessing::kNoError,
-                         ap->ProcessReverseStream(far_chan_buf.channels(), stream_config,
-                                                  stream_config, far_chan_buf.channels()));
+                         ap->ProcessReverseStream(far_chan_buf.channels(), stream_config_in,
+                                                  stream_config_in, far_chan_buf.channels()));
         }
         RTC_CHECK_EQ(AudioProcessing::kNoError,
-                     ap->ProcessStream(near_chan_buf.channels(), stream_config,
-                                       stream_config, out_chan_buf.channels()));
+                     ap->ProcessStream(near_chan_buf.channels(), stream_config_in,
+                                       stream_config_out, out_chan_buf.channels()));
 
         //webrtc::EchoCancellationImpl* ec(static_cast<webrtc::EchoCancellationImpl*>( ap->echo_cancellation()));
         //cerr << ec->is_aec3_enabled() << endl;
