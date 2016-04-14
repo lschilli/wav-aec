@@ -7,6 +7,8 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 add_subdirectory(gflags)
 
 add_definitions("-DWEBRTC_LINUX -DWEBRTC_POSIX -DWEBRTC_NS_FLOAT")
+#-DWEBRTC_UNTRUSTED_DELAY
+
 include_directories(
     webrtc
     webrtc/webrtc/common_audio/signal_processing/include
@@ -121,13 +123,13 @@ set(WEBRTC_SRC_
     modules/audio_coding/codecs/isac/main/source/transform.c
     modules/audio_processing/aec/aec_core.cc
     modules/audio_processing/aec/aec_core_sse2.cc
-    modules/audio_processing/aec/aec_rdft.c
-    modules/audio_processing/aec/aec_rdft_sse2.c
+    modules/audio_processing/aec/aec_rdft.cc
+    modules/audio_processing/aec/aec_rdft_sse2.cc
     modules/audio_processing/aec/aec_resampler.cc
     modules/audio_processing/aec/echo_cancellation.cc
-    modules/audio_processing/aecm/aecm_core.c
-    modules/audio_processing/aecm/aecm_core_c.c
-    modules/audio_processing/aecm/echo_control_mobile.c
+    modules/audio_processing/aecm/aecm_core.cc
+    modules/audio_processing/aecm/aecm_core_c.cc
+    modules/audio_processing/aecm/echo_control_mobile.cc
     modules/audio_processing/agc/agc.cc
     modules/audio_processing/agc/agc_manager_direct.cc
     modules/audio_processing/agc/histogram.cc
@@ -162,8 +164,8 @@ set(WEBRTC_SRC_
     modules/audio_processing/transient/wpd_tree.cc
     modules/audio_processing/typing_detection.cc
     modules/audio_processing/utility/block_mean_calculator.cc
-    modules/audio_processing/utility/delay_estimator.c
-    modules/audio_processing/utility/delay_estimator_wrapper.c
+    modules/audio_processing/utility/delay_estimator.cc
+    modules/audio_processing/utility/delay_estimator_wrapper.cc
     modules/audio_processing/vad/gmm.cc
     modules/audio_processing/vad/pitch_based_vad.cc
     modules/audio_processing/vad/pitch_internal.cc
