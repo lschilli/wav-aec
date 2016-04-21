@@ -67,6 +67,7 @@ std::shared_ptr<AudioProcessing> configure_processing() {
     extraconfig.Set<webrtc::DelayAgnostic>(new webrtc::DelayAgnostic(FLAGS_aec_delay_agnostic));
     extraconfig.Set<webrtc::ExtendedFilter>(new webrtc::ExtendedFilter(FLAGS_aec_extended_filter));
     extraconfig.Set<webrtc::EchoCanceller3>(new webrtc::EchoCanceller3(true));
+    //extraconfig.Set<RefinedAdaptiveFilter>(new RefinedAdaptiveFilter(true));
     ap->SetExtraOptions(extraconfig);
 
     RTC_CHECK_EQ(AudioProcessing::kNoError, ap->echo_cancellation()->Enable(FLAGS_filter_aec));
